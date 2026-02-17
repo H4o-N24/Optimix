@@ -8,7 +8,7 @@ Knotは、メンバーの空きスケジュールに基づき、「誰が必須�
 
 | 機能 | 説明 |
 |:---|:---|
-| 📅 **空き日登録** | 翌月の空き日をModal UIで一括登録 |
+| 📅 **空き日登録** | 翌月の空き日をカレンダー選択UIで一括登録 |
 | 🎯 **条件付きイベント作成** | 必須メンバー・最低人数・曜日フィルターを指定 |
 | 🏆 **最適日自動提案** | 条件を満たす日をランキング形式で提示 |
 | 👥 **定員管理** | 先着順参加・キャンセル待ち自動繰り上げ |
@@ -23,8 +23,8 @@ Knotは、メンバーの空きスケジュールに基づき、「誰が必須�
 ### 2. インストール
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/optimix.git
-cd optimix
+git clone https://github.com/H4o-N24/Optimix.git
+cd Optimix
 npm install
 ```
 
