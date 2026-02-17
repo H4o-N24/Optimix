@@ -35,7 +35,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
         const isWeekend = dow === 0 || dow === 6;
         const emoji = isWeekend ? '🟧' : '⬜';
         firstHalfOptions.push({
-            label: `${d}日 (${dayLabel})`,
+            label: `${month}/${d} (${dayLabel})`,
             value: dateStr,
             emoji,
         });
@@ -57,7 +57,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
         const isWeekend = dow === 0 || dow === 6;
         const emoji = isWeekend ? '🟧' : '⬜';
         secondHalfOptions.push({
-            label: `${d}日 (${dayLabel})`,
+            label: `${month}/${d} (${dayLabel})`,
             value: dateStr,
             emoji,
         });
@@ -115,7 +115,6 @@ function buildCalendarText(year: number, month: number, daysInMonth: number): st
     const firstDow = new Date(`${year}-${String(month).padStart(2, '0')}-01T00:00:00`).getDay();
 
     let line = '`';
-    // 先頭の空白
     for (let i = 0; i < firstDow; i++) {
         line += '    ';
     }
