@@ -139,6 +139,12 @@ async function handleSelectMenu(interaction: StringSelectMenuInteraction): Promi
         return;
     }
 
+    // --- イベント: 複数削除 ---
+    if (customId === 'event_delete_select') {
+        await handleEventDeleteConfirm(interaction);
+        return;
+    }
+
     // --- イベント: 候補日選択 ---
     const [action, eventId] = customId.split(':');
     if (action !== 'event_select_date' || !eventId) return;
@@ -302,6 +308,42 @@ async function handleAvailabilityConfirm(interaction: ButtonInteraction): Promis
             successEmbed(
                 '空き日を登録しました！',
                 `**${dateStrings.length}日分** の空き日を登録しました。\n\n${formattedDates}`,
+            ),
+        ],
+    });
+}
+
+/**
+ * イベント複数削除の確定ハンドラ
+ */
+async function handleEventDeleteConfirm(interaction: StringSelectMenuInteraction): Promise<void> {
+    await interaction.deferReply({ ephemeral: true });
+
+    const selectedIds = interaction.values;
+
+    // 選択されたイベントを取得
+    const events = await prisma.event.findMany({
+        where: { id: { in: selectedIds } },
+    });
+
+    if (events.length === 0) {
+        await interaction.editReply({
+            embeds: [errorEmbed('エラー', 'イベントが見つかりません。')],
+        });
+        return;
+    }
+
+    // 一括削除
+    await prisma.event.deleteMany({
+        where: { id: { in: selectedIds } },
+    });
+
+    const deletedNames = events.map((e) => `• **${e.title}**`).join('\n');
+    await interaction.editReply({
+        embeds: [
+            successEmbed(
+                `${events.length}件のイベントを削除しました`,
+                deletedNames,
             ),
         ],
     });

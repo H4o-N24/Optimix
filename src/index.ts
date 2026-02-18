@@ -7,6 +7,7 @@ import { Client, GatewayIntentBits } from 'discord.js';
 import { config, validateConfig } from './config.js';
 import { registerReadyHandler } from './events/ready.js';
 import { registerInteractionHandler } from './events/interactionCreate.js';
+import { startMonthlyScheduler, stopMonthlyScheduler } from './services/cleanup.js';
 
 // 環境変数のバリデーション
 validateConfig();
@@ -24,7 +25,9 @@ registerReadyHandler(client);
 registerInteractionHandler(client);
 
 // ログイン
-client.login(config.discordToken).catch((error) => {
+client.login(config.discordToken).then(() => {
+    startMonthlyScheduler(client);
+}).catch((error) => {
     console.error('❌ Botのログインに失敗しました:', error);
     process.exit(1);
 });
@@ -32,12 +35,14 @@ client.login(config.discordToken).catch((error) => {
 // グレースフルシャットダウン
 process.on('SIGINT', () => {
     console.log('\n🛑 Knot をシャットダウンしています...');
+    stopMonthlyScheduler();
     client.destroy();
     process.exit(0);
 });
 
 process.on('SIGTERM', () => {
     console.log('\n🛑 Knot をシャットダウンしています...');
+    stopMonthlyScheduler();
     client.destroy();
     process.exit(0);
 });

@@ -92,10 +92,7 @@ export const data = new SlashCommandBuilder()
     .addSubcommand((sub) =>
         sub
             .setName('delete')
-            .setDescription('イベントを削除します')
-            .addStringOption((opt) =>
-                opt.setName('id').setDescription('イベント名で検索').setRequired(true).setAutocomplete(true),
-            ),
+            .setDescription('イベントを選択して削除します（複数選択可）'),
     );
 
 export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
@@ -442,27 +439,51 @@ async function handleEdit(interaction: ChatInputCommandInteraction): Promise<voi
 }
 
 /**
- * イベント削除
+ * イベント削除（SelectMenuで複数選択）
  */
 async function handleDelete(interaction: ChatInputCommandInteraction): Promise<void> {
-    await interaction.deferReply({ ephemeral: true });
-
-    const eventId = interaction.options.getString('id', true);
-    const event = await prisma.event.findUnique({ where: { id: eventId } });
-
-    if (!event) {
-        await interaction.editReply({ embeds: [errorEmbed('エラー', 'イベントが見つかりません。')] });
+    const guildId = interaction.guildId;
+    if (!guildId) {
+        await interaction.reply({ embeds: [errorEmbed('エラー', 'サーバー内でのみ使用できます。')], ephemeral: true });
         return;
     }
 
-    if (event.createdBy !== interaction.user.id) {
-        await interaction.editReply({ embeds: [errorEmbed('権限エラー', 'イベントの削除は作成者のみ可能です。')] });
+    const events = await prisma.event.findMany({
+        where: {
+            guildId,
+            status: { in: ['PLANNING', 'CONFIRMED'] },
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 25,
+    });
+
+    if (events.length === 0) {
+        await interaction.reply({
+            embeds: [infoEmbed('削除対象なし', '削除できるイベントがありません。')],
+            ephemeral: true,
+        });
         return;
     }
 
-    await prisma.event.delete({ where: { id: eventId } });
+    const selectMenu = new StringSelectMenuBuilder()
+        .setCustomId('event_delete_select')
+        .setPlaceholder('削除するイベントを選択（複数選択可）')
+        .setMinValues(1)
+        .setMaxValues(events.length)
+        .addOptions(
+            events.map((e) => ({
+                label: e.title,
+                description: e.date ? formatDateJP(e.date) : '日程未定',
+                value: e.id,
+                emoji: e.status === 'CONFIRMED' ? '✅' : '📝',
+            })),
+        );
 
-    await interaction.editReply({
-        embeds: [successEmbed('イベントを削除しました', `**${event.title}** を削除しました。`)],
+    const row = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(selectMenu);
+
+    await interaction.reply({
+        embeds: [infoEmbed('🗑️ イベント削除', '削除するイベントを選択してください。\n複数選択できます。')],
+        components: [row],
+        ephemeral: true,
     });
 }
