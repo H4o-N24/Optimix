@@ -36,6 +36,14 @@ export function registerInteractionHandler(client: Client): void {
                 return;
             }
 
+            // オートコンプリート
+            if (interaction.isAutocomplete()) {
+                const command = commands.get(interaction.commandName);
+                if (!command || !('autocomplete' in command)) return;
+                await (command as any).autocomplete(interaction);
+                return;
+            }
+
             // ボタン
             if (interaction.isButton()) {
                 await handleButton(interaction);

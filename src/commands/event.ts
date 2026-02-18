@@ -10,6 +10,7 @@
 import {
     SlashCommandBuilder,
     type ChatInputCommandInteraction,
+    type AutocompleteInteraction,
     ActionRowBuilder,
     StringSelectMenuBuilder,
     ButtonBuilder,
@@ -68,7 +69,7 @@ export const data = new SlashCommandBuilder()
             .setName('info')
             .setDescription('イベントの詳細を表示します')
             .addStringOption((opt) =>
-                opt.setName('id').setDescription('イベントID').setRequired(true),
+                opt.setName('id').setDescription('イベント名で検索').setRequired(true).setAutocomplete(true),
             ),
     )
     .addSubcommand((sub) =>
@@ -76,7 +77,7 @@ export const data = new SlashCommandBuilder()
             .setName('edit')
             .setDescription('イベントを編集します')
             .addStringOption((opt) =>
-                opt.setName('id').setDescription('イベントID').setRequired(true),
+                opt.setName('id').setDescription('イベント名で検索').setRequired(true).setAutocomplete(true),
             )
             .addStringOption((opt) =>
                 opt.setName('title').setDescription('新しいイベント名').setRequired(false),
@@ -93,7 +94,7 @@ export const data = new SlashCommandBuilder()
             .setName('delete')
             .setDescription('イベントを削除します')
             .addStringOption((opt) =>
-                opt.setName('id').setDescription('イベントID').setRequired(true),
+                opt.setName('id').setDescription('イベント名で検索').setRequired(true).setAutocomplete(true),
             ),
     );
 
@@ -117,6 +118,33 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
             await handleDelete(interaction);
             break;
     }
+}
+
+/**
+ * オートコンプリートハンドラ: イベント名で検索
+ */
+export async function autocomplete(interaction: AutocompleteInteraction): Promise<void> {
+    const guildId = interaction.guildId;
+    if (!guildId) return;
+
+    const focused = interaction.options.getFocused();
+
+    const events = await prisma.event.findMany({
+        where: {
+            guildId,
+            status: { in: ['PLANNING', 'CONFIRMED'] },
+            title: { contains: focused },
+        },
+        orderBy: { createdAt: 'desc' },
+        take: 25,
+    });
+
+    await interaction.respond(
+        events.map((e) => ({
+            name: `${e.title}${e.date ? ` (${e.date})` : ''}`,
+            value: e.id,
+        })),
+    );
 }
 
 /**
