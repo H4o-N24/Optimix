@@ -4,7 +4,7 @@
  * サブコマンド:
  * - /event create: 条件付きイベント作成 + 最適日抽出
  * - /event list: イベント一覧表示
- * - /event info: イベント詳細表示
+ * - /event manage: イベント管理（詳細表示・編集・削除を統合）
  */
 
 import {
@@ -15,7 +15,6 @@ import {
     StringSelectMenuBuilder,
     ButtonBuilder,
     ButtonStyle,
-    type StringSelectMenuOptionBuilder,
 } from 'discord.js';
 import { PrismaClient } from '@prisma/client';
 import { findOptimalDates } from '../services/scheduler.js';
@@ -65,34 +64,7 @@ export const data = new SlashCommandBuilder()
         sub.setName('list').setDescription('現在のイベント一覧を表示します'),
     )
     .addSubcommand((sub) =>
-        sub
-            .setName('info')
-            .setDescription('イベントの詳細を表示します')
-            .addStringOption((opt) =>
-                opt.setName('id').setDescription('イベント名で検索').setRequired(true).setAutocomplete(true),
-            ),
-    )
-    .addSubcommand((sub) =>
-        sub
-            .setName('edit')
-            .setDescription('イベントを編集します')
-            .addStringOption((opt) =>
-                opt.setName('id').setDescription('イベント名で検索').setRequired(true).setAutocomplete(true),
-            )
-            .addStringOption((opt) =>
-                opt.setName('title').setDescription('新しいイベント名').setRequired(false),
-            )
-            .addIntegerOption((opt) =>
-                opt.setName('min').setDescription('新しい最低参加人数').setRequired(false),
-            )
-            .addIntegerOption((opt) =>
-                opt.setName('max').setDescription('新しい定員').setRequired(false),
-            ),
-    )
-    .addSubcommand((sub) =>
-        sub
-            .setName('delete')
-            .setDescription('イベントを選択して削除します（複数選択可）'),
+        sub.setName('manage').setDescription('イベントの詳細表示・編集・削除を行います'),
     );
 
 export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
@@ -105,20 +77,14 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
         case 'list':
             await handleList(interaction);
             break;
-        case 'info':
-            await handleInfo(interaction);
-            break;
-        case 'edit':
-            await handleEdit(interaction);
-            break;
-        case 'delete':
-            await handleDelete(interaction);
+        case 'manage':
+            await handleManage(interaction);
             break;
     }
 }
 
 /**
- * オートコンプリートハンドラ: イベント名で検索
+ * オートコンプリートハンドラ（残しておくが使わない場合もある）
  */
 export async function autocomplete(interaction: AutocompleteInteraction): Promise<void> {
     const guildId = interaction.guildId;
@@ -301,147 +267,20 @@ async function handleList(interaction: ChatInputCommandInteraction): Promise<voi
         const dateStr = e.date ? formatDateJP(e.date) : '未定';
         const count = e.participants.length;
         const maxStr = e.maxParticipants ? `/${e.maxParticipants}` : '';
-        return `${statusEmoji} **${e.title}** | ${dateStr} | ${count}${maxStr}人 | ID: \`${e.id}\``;
+        return `${statusEmoji} **${e.title}** | ${dateStr} | ${count}${maxStr}人`;
     });
 
     await interaction.reply({
-        embeds: [infoEmbed('📋 イベント一覧', descriptions.join('\n'))],
+        embeds: [infoEmbed('📋 イベント一覧', descriptions.join('\n') + '\n\n`/event manage` で管理できます')],
         ephemeral: true,
     });
 }
 
 /**
- * イベント詳細
+ * イベント管理パネル
+ * SelectMenuでイベントを選択 → 詳細表示 + アクションボタン
  */
-async function handleInfo(interaction: ChatInputCommandInteraction): Promise<void> {
-    const eventId = interaction.options.getString('id', true);
-
-    const event = await prisma.event.findUnique({
-        where: { id: eventId },
-        include: {
-            participants: { include: { user: true }, orderBy: { joinedAt: 'asc' } },
-            requirements: { include: { user: true } },
-        },
-    });
-
-    if (!event) {
-        await interaction.reply({
-            embeds: [errorEmbed('エラー', 'イベントが見つかりません。')],
-            ephemeral: true,
-        });
-        return;
-    }
-
-    const confirmed = event.participants.filter((p) => p.status === 'CONFIRMED');
-    const waitlisted = event.participants.filter((p) => p.status === 'WAITLISTED');
-    const required = event.requirements.map((r) => `<@${r.requiredUserId}>`);
-
-    const fields = [
-        { name: 'ステータス', value: event.status, inline: true },
-        { name: '日程', value: event.date ? formatDateJP(event.date) : '未定', inline: true },
-        { name: '最低人数', value: `${event.minParticipants}人`, inline: true },
-        {
-            name: `参加確定（${confirmed.length}${event.maxParticipants ? `/${event.maxParticipants}` : ''}人）`,
-            value: confirmed.length > 0 ? confirmed.map((p) => `<@${p.userId}>`).join(', ') : 'なし',
-            inline: false,
-        },
-    ];
-
-    if (waitlisted.length > 0) {
-        fields.push({
-            name: `キャンセル待ち（${waitlisted.length}人）`,
-            value: waitlisted.map((p) => `<@${p.userId}>`).join(', '),
-            inline: false,
-        });
-    }
-
-    if (required.length > 0) {
-        fields.push({
-            name: '必須メンバー',
-            value: required.join(', '),
-            inline: false,
-        });
-    }
-
-    // 参加/キャンセルボタン
-    const joinBtn = new ButtonBuilder()
-        .setCustomId(`event_join:${event.id}`)
-        .setLabel('参加')
-        .setStyle(ButtonStyle.Success)
-        .setEmoji('✅');
-
-    const cancelBtn = new ButtonBuilder()
-        .setCustomId(`event_cancel:${event.id}`)
-        .setLabel('キャンセル')
-        .setStyle(ButtonStyle.Danger)
-        .setEmoji('❌');
-
-    const row = new ActionRowBuilder<ButtonBuilder>().addComponents(joinBtn, cancelBtn);
-
-    const embed = infoEmbed(event.title, event.description ?? 'イベントの詳細');
-    embed.setFields(fields);
-
-    await interaction.reply({
-        embeds: [embed],
-        components: [row],
-    });
-}
-
-/**
- * イベント編集
- */
-async function handleEdit(interaction: ChatInputCommandInteraction): Promise<void> {
-    await interaction.deferReply({ ephemeral: true });
-
-    const eventId = interaction.options.getString('id', true);
-    const event = await prisma.event.findUnique({ where: { id: eventId } });
-
-    if (!event) {
-        await interaction.editReply({ embeds: [errorEmbed('エラー', 'イベントが見つかりません。')] });
-        return;
-    }
-
-    if (event.createdBy !== interaction.user.id) {
-        await interaction.editReply({ embeds: [errorEmbed('権限エラー', 'イベントの編集は作成者のみ可能です。')] });
-        return;
-    }
-
-    const newTitle = interaction.options.getString('title');
-    const newMin = interaction.options.getInteger('min');
-    const newMax = interaction.options.getInteger('max');
-
-    if (!newTitle && newMin === null && newMax === null) {
-        await interaction.editReply({ embeds: [errorEmbed('入力エラー', '変更する項目を少なくとも1つ指定してください。\n`title`, `min`, `max` のいずれか')] });
-        return;
-    }
-
-    const updateData: { title?: string; minParticipants?: number; maxParticipants?: number | null } = {};
-    const changes: string[] = [];
-
-    if (newTitle) {
-        updateData.title = newTitle;
-        changes.push(`📝 イベント名: **${event.title}** → **${newTitle}**`);
-    }
-    if (newMin !== null) {
-        updateData.minParticipants = newMin;
-        changes.push(`👥 最低人数: **${event.minParticipants}** → **${newMin}**`);
-    }
-    if (newMax !== null) {
-        updateData.maxParticipants = newMax === 0 ? null : newMax;
-        changes.push(`📊 定員: **${event.maxParticipants ?? '無制限'}** → **${newMax === 0 ? '無制限' : newMax}**`);
-    }
-
-    await prisma.event.update({ where: { id: eventId }, data: updateData });
-
-    await interaction.editReply({
-        embeds: [successEmbed('イベントを更新しました', changes.join('\n'))],
-    });
-}
-
-/**
- * イベント削除（SelectMenuで複数選択）
- */
-async function handleDelete(interaction: ChatInputCommandInteraction): Promise<void> {
+async function handleManage(interaction: ChatInputCommandInteraction): Promise<void> {
     const guildId = interaction.guildId;
     if (!guildId) {
         await interaction.reply({ embeds: [errorEmbed('エラー', 'サーバー内でのみ使用できます。')], ephemeral: true });
@@ -459,17 +298,16 @@ async function handleDelete(interaction: ChatInputCommandInteraction): Promise<v
 
     if (events.length === 0) {
         await interaction.reply({
-            embeds: [infoEmbed('削除対象なし', '削除できるイベントがありません。')],
+            embeds: [infoEmbed('イベント管理', 'まだイベントがありません。\n`/event create` で作成しましょう！')],
             ephemeral: true,
         });
         return;
     }
 
+    // イベント選択メニュー
     const selectMenu = new StringSelectMenuBuilder()
-        .setCustomId('event_delete_select')
-        .setPlaceholder('削除するイベントを選択（複数選択可）')
-        .setMinValues(1)
-        .setMaxValues(events.length)
+        .setCustomId('event_manage_select')
+        .setPlaceholder('管理するイベントを選択')
         .addOptions(
             events.map((e) => ({
                 label: e.title,
@@ -479,11 +317,23 @@ async function handleDelete(interaction: ChatInputCommandInteraction): Promise<v
             })),
         );
 
-    const row = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(selectMenu);
+    // 複数削除ボタン
+    const batchDeleteBtn = new ButtonBuilder()
+        .setCustomId('event_batch_delete')
+        .setLabel(`🗑️ まとめて削除（${events.length}件）`)
+        .setStyle(ButtonStyle.Danger);
+
+    const row1 = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(selectMenu);
+    const row2 = new ActionRowBuilder<ButtonBuilder>().addComponents(batchDeleteBtn);
 
     await interaction.reply({
-        embeds: [infoEmbed('🗑️ イベント削除', '削除するイベントを選択してください。\n複数選択できます。')],
-        components: [row],
+        embeds: [infoEmbed(
+            '⚙️ イベント管理',
+            '管理したいイベントを選択してください。\n\n' +
+            '**選択後にできること:**\n' +
+            '📋 詳細表示 / ✏️ 編集 / 🗑️ 削除',
+        )],
+        components: [row1, row2],
         ephemeral: true,
     });
 }
