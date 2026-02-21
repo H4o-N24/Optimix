@@ -37,6 +37,26 @@ export function registerInteractionHandler(client: Client): void {
             if (interaction.isChatInputCommand()) {
                 const command = commands.get(interaction.commandName);
                 if (!command) return;
+
+                // --- 専用チャンネル制限チェック ---
+                // /setup コマンドはどこからでも実行可能
+                if (interaction.commandName !== 'setup' && interaction.guildId) {
+                    const guildRecord = await prisma.guild.findUnique({
+                        where: { guildId: interaction.guildId },
+                        select: { botChannelId: true },
+                    });
+                    if (guildRecord?.botChannelId && interaction.channelId !== guildRecord.botChannelId) {
+                        await interaction.reply({
+                            embeds: [errorEmbed(
+                                'チャンネルが違います',
+                                `Knotのコマンドは <#${guildRecord.botChannelId}> でのみ使用できます。`,
+                            )],
+                            ephemeral: true,
+                        });
+                        return;
+                    }
+                }
+
                 await command.execute(interaction);
                 return;
             }

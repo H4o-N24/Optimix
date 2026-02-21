@@ -12,6 +12,7 @@ import {
 import * as availability from './availability.js';
 import * as event from './event.js';
 import * as help from './help.js';
+import * as setup from './setup.js';
 
 export interface Command {
     data: SlashCommandBuilder;
@@ -21,7 +22,7 @@ export interface Command {
 const commands = new Collection<string, Command>();
 
 // コマンドを登録
-const modules = [availability, event, help] as Command[];
+const modules = [availability, event, help, setup] as Command[];
 for (const mod of modules) {
     commands.set(mod.data.name, mod);
 }

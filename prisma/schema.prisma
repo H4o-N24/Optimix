@@ -9,12 +9,13 @@ datasource db {
 
 /// Discordサーバー設定
 model Guild {
-  id        String   @id @default(cuid())
-  guildId   String   @unique @map("guild_id")
-  planType  String   @default("FREE") @map("plan_type") // FREE, PRO, TEAM
-  timezone  String   @default("Asia/Tokyo")
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  id            String   @id @default(cuid())
+  guildId       String   @unique @map("guild_id")
+  botChannelId  String?  @map("bot_channel_id") // Knot専用チャンネルID（nullなら制限なし）
+  planType      String   @default("FREE") @map("plan_type") // FREE, PRO, TEAM
+  timezone      String   @default("Asia/Tokyo")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
 
   availabilities Availability[]
   events         Event[]
