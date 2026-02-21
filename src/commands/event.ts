@@ -210,6 +210,7 @@ async function handleCreate(interaction: ChatInputCommandInteraction): Promise<v
         ...c,
         date: formatDateJP(c.date),
         members: c.members.map((uid) => `<@${uid}>`),
+        tags: c.tags,
     }));
 
     const selectMenu = new StringSelectMenuBuilder()
@@ -218,7 +219,10 @@ async function handleCreate(interaction: ChatInputCommandInteraction): Promise<v
         .addOptions(
             candidates.map((c, i) => ({
                 label: formatDateJP(c.date),
-                description: `${c.count}人参加可能`,
+                description: [
+                    `${c.count}人参加可能`,
+                    ...(c.tags.slice(0, 1)),
+                ].join(' | ').slice(0, 100),
                 value: c.date,
                 emoji: ['🥇', '🥈', '🥉'][i] ?? '📅',
             })),
@@ -332,8 +336,14 @@ async function handleManage(interaction: ChatInputCommandInteraction): Promise<v
         .setLabel(`🗑️ まとめて削除（${events.length}件）`)
         .setStyle(ButtonStyle.Danger);
 
+    // 再提案ボタン
+    const recomendBtn = new ButtonBuilder()
+        .setCustomId('event_recommend')
+        .setLabel('🔍 最適日を再提案')
+        .setStyle(ButtonStyle.Primary);
+
     const row1 = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(selectMenu);
-    const row2 = new ActionRowBuilder<ButtonBuilder>().addComponents(batchDeleteBtn);
+    const row2 = new ActionRowBuilder<ButtonBuilder>().addComponents(recomendBtn, batchDeleteBtn);
 
     await interaction.reply({
         embeds: [infoEmbed(

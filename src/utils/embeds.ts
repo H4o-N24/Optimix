@@ -55,19 +55,21 @@ export function eventEmbed(
 
 /** ランキング候補日 Embed */
 export function candidateEmbed(
-    candidates: { date: string; count: number; members: string[] }[],
+    candidates: { date: string; count: number; members: string[]; tags?: string[] }[],
+    title = '🏆 おすすめ候補日',
 ): EmbedBuilder {
     const embed = new EmbedBuilder()
         .setColor(BRAND_COLORS.primary)
-        .setTitle('🏆 おすすめ候補日')
-        .setDescription('条件を満たす最適な日程をランキング形式で提案します。')
+        .setTitle(title)
+        .setDescription('✨ 空き日データをもとに最適な日程をランキング形式で提案します。\nSelectMenuから希望日を選んで確定してください。')
         .setTimestamp();
 
     candidates.forEach((c, i) => {
-        const medal = ['🥇', '🥈', '🥉'][i] ?? `${i + 1}.`;
+        const medal = ['🥇', '🥈', '🥉'][i] ?? `**${i + 1}.**`;
+        const tagLine = c.tags && c.tags.length > 0 ? `\n${c.tags.join('  ')}` : '';
         embed.addFields({
             name: `${medal} ${c.date}`,
-            value: `参加可能: **${c.count}人** (${c.members.join(', ')})`,
+            value: `👥 **${c.count}人**参加可能: ${c.members.join(', ')}${tagLine}`,
             inline: false,
         });
     });

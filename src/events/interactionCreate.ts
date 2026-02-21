@@ -133,6 +133,12 @@ async function handleButton(interaction: ButtonInteraction): Promise<void> {
         return;
     }
 
+    // --- イベント: 最適日を再提案 ---
+    if (customId === 'event_recommend') {
+        await handleEventRecommend(interaction);
+        return;
+    }
+
     // --- イベント: 参加/キャンセル ---
     const [action, eventId] = customId.split(':');
     if (!eventId) return;
@@ -670,6 +676,49 @@ async function showEventHistory(interaction: ButtonInteraction): Promise<void> {
 
     await interaction.reply({
         embeds: [infoEmbed('📜 過去のイベント', descriptions.join('\n'))],
+        ephemeral: true,
+    });
+}
+
+// =====================================
+// 最適日再提案: イベント選択メニュー表示
+// =====================================
+async function handleEventRecommend(interaction: ButtonInteraction): Promise<void> {
+    const guildId = interaction.guildId;
+    if (!guildId) return;
+
+    const events = await prisma.event.findMany({
+        where: { guildId, status: { in: ['PLANNING', 'CONFIRMED'] } },
+        include: { requirements: true },
+        orderBy: { createdAt: 'desc' },
+        take: 25,
+    });
+
+    if (events.length === 0) {
+        await interaction.reply({
+            embeds: [infoEmbed('再提案', 'まだイベントがありません。`/event create` で作成してください。')],
+            ephemeral: true,
+        });
+        return;
+    }
+
+    const selectMenu = new StringSelectMenuBuilder()
+        .setCustomId('event_recommend_select')
+        .setPlaceholder('再提案するイベントを選択')
+        .addOptions(
+            events.map((e) => ({
+                label: e.title,
+                description: e.date ? `現在: ${formatDateJP(e.date)}` : '日程未定',
+                value: e.id,
+                emoji: e.status === 'CONFIRMED' ? '✅' : '📝',
+            })),
+        );
+
+    const row = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(selectMenu);
+
+    await interaction.reply({
+        embeds: [infoEmbed('🔍 最適日を再提案', '最適日を再計算するイベントを選択してください。\n最新の空き日データをもとに提案します。')],
+        components: [row],
         ephemeral: true,
     });
 }

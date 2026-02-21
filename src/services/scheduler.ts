@@ -17,6 +17,7 @@ export interface ScheduleCandidate {
     date: string;
     count: number;
     members: string[]; // Discord User IDs
+    tags: string[];    // おすすめ理由タグ (例: ['🏆 全員参加可能', '📅 平日'])
 }
 
 export interface FindOptimalDatesOptions {
@@ -27,6 +28,7 @@ export interface FindOptimalDatesOptions {
     minParticipants?: number;
     dayOfWeekFilter?: number[]; // 0=日, 1=月, ..., 6=土
     limit?: number;
+    totalRegisteredUsers?: number; // サーバーの空き日登録者数（全員参加判定用）
 }
 
 /**
@@ -42,7 +44,8 @@ export async function findOptimalDates(
         requiredUserIds = [],
         minParticipants = 1,
         dayOfWeekFilter,
-        limit = 3,
+        limit = 5,
+        totalRegisteredUsers,
     } = options;
 
     // 1. 期間内の空き日を取得
@@ -61,6 +64,10 @@ export async function findOptimalDates(
         },
     });
 
+    // 実際の登録者数（引数で渡されていない場合はDBから計算）
+    const uniqueUsers = new Set(availabilities.map((a) => a.userId));
+    const registeredCount = totalRegisteredUsers ?? uniqueUsers.size;
+
     // 2. 日付ごとに集計
     const dateMap = new Map<string, string[]>();
     for (const av of availabilities) {
@@ -74,8 +81,8 @@ export async function findOptimalDates(
 
     for (const [date, members] of dateMap) {
         // 曜日フィルター
+        const dow = new Date(date + 'T00:00:00').getDay();
         if (dayOfWeekFilter && dayOfWeekFilter.length > 0) {
-            const dow = new Date(date + 'T00:00:00').getDay();
             if (!dayOfWeekFilter.includes(dow)) continue;
         }
 
@@ -88,10 +95,19 @@ export async function findOptimalDates(
         // 最低人数チェック
         if (members.length < minParticipants) continue;
 
+        // おすすめ理由タグを生成
+        const tags: string[] = [];
+        if (registeredCount > 0 && members.length >= registeredCount) tags.push('🏆 全員参加可能');
+        if (members.length >= minParticipants * 2) tags.push('👥 参加者多数');
+        if (requiredUserIds.length > 0 && requiredUserIds.every((uid) => members.includes(uid))) tags.push('✅ 必須メンバー全員空き');
+        if (dow >= 1 && dow <= 5) tags.push('📅 平日');
+        if (dow === 0 || dow === 6) tags.push('🏖️ 週末');
+
         candidates.push({
             date,
             count: members.length,
             members,
+            tags,
         });
     }
 
@@ -130,25 +146,30 @@ export function findOptimalDatesFromData(
         dateMap.set(av.date, members);
     }
 
+    const uniqueUsers = new Set(availabilities.map((a) => a.userId));
+    const registeredCount = uniqueUsers.size;
+
     let candidates: ScheduleCandidate[] = [];
 
     for (const [date, members] of dateMap) {
-        // 曜日フィルター
+        const dow = new Date(date + 'T00:00:00').getDay();
         if (dayOfWeekFilter && dayOfWeekFilter.length > 0) {
-            const dow = new Date(date + 'T00:00:00').getDay();
             if (!dayOfWeekFilter.includes(dow)) continue;
         }
-
-        // 必須メンバーチェック
         if (requiredUserIds.length > 0) {
             const allRequired = requiredUserIds.every((uid) => members.includes(uid));
             if (!allRequired) continue;
         }
-
-        // 最低人数チェック
         if (members.length < minParticipants) continue;
 
-        candidates.push({ date, count: members.length, members });
+        const tags: string[] = [];
+        if (registeredCount > 0 && members.length >= registeredCount) tags.push('🏆 全員参加可能');
+        if (members.length >= minParticipants * 2) tags.push('👥 参加者多数');
+        if (requiredUserIds.length > 0 && requiredUserIds.every((uid) => members.includes(uid))) tags.push('✅ 必須メンバー全員空き');
+        if (dow >= 1 && dow <= 5) tags.push('📅 平日');
+        if (dow === 0 || dow === 6) tags.push('🏖️ 週末');
+
+        candidates.push({ date, count: members.length, members, tags });
     }
 
     candidates.sort((a, b) => b.count - a.count);
