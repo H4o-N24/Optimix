@@ -19,13 +19,12 @@ import {
     TextInputBuilder,
     TextInputStyle,
 } from 'discord.js';
-import { PrismaClient } from '@prisma/client';
 import { commands } from '../commands/index.js';
 import { joinEvent, cancelEvent } from '../services/participant.js';
 import { successEmbed, errorEmbed, infoEmbed } from '../utils/embeds.js';
 import { formatDateJP, getNextMonthInfo } from '../utils/date.js';
 
-const prisma = new PrismaClient();
+import { prisma } from '../lib/prisma.js';
 
 /**
  * ユーザーごとの空き日選択状態を一時保持

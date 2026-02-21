@@ -6,10 +6,8 @@
  */
 
 import { type Client, type TextChannel } from 'discord.js';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma.js';
 import { infoEmbed } from '../utils/embeds.js';
-
-const prisma = new PrismaClient();
 
 /** チェック間隔: 6時間ごと */
 const CHECK_INTERVAL_MS = 6 * 60 * 60 * 1000;

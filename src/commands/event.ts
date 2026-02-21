@@ -16,12 +16,11 @@ import {
     ButtonBuilder,
     ButtonStyle,
 } from 'discord.js';
-import { PrismaClient } from '@prisma/client';
 import { findOptimalDates } from '../services/scheduler.js';
 import { candidateEmbed, successEmbed, infoEmbed, errorEmbed } from '../utils/embeds.js';
 import { formatDateJP } from '../utils/date.js';
 
-const prisma = new PrismaClient();
+import { prisma } from '../lib/prisma.js';
 
 export const data = new SlashCommandBuilder()
     .setName('event')

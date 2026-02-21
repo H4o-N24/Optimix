@@ -5,9 +5,7 @@
  * - キャンセル処理（最古のキャンセル待ちを自動繰り上げ＋通知）
  */
 
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '../lib/prisma.js';
 
 export interface ParticipantResult {
     success: boolean;
@@ -143,21 +141,3 @@ export async function cancelEvent(eventId: string, userId: string): Promise<Part
     };
 }
 
-/**
- * イベントの参加者一覧を取得
- */
-export async function getParticipants(eventId: string) {
-    const confirmed = await prisma.eventParticipant.findMany({
-        where: { eventId, status: 'CONFIRMED' },
-        orderBy: { joinedAt: 'asc' },
-        include: { user: true },
-    });
-
-    const waitlisted = await prisma.eventParticipant.findMany({
-        where: { eventId, status: 'WAITLISTED' },
-        orderBy: { joinedAt: 'asc' },
-        include: { user: true },
-    });
-
-    return { confirmed, waitlisted };
-}

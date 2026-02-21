@@ -33,16 +33,12 @@ client.login(config.discordToken).then(() => {
 });
 
 // グレースフルシャットダウン
-process.on('SIGINT', () => {
+function shutdown(): void {
     console.log('\n🛑 Knot をシャットダウンしています...');
     stopMonthlyScheduler();
     client.destroy();
     process.exit(0);
-});
+}
 
-process.on('SIGTERM', () => {
-    console.log('\n🛑 Knot をシャットダウンしています...');
-    stopMonthlyScheduler();
-    client.destroy();
-    process.exit(0);
-});
+process.on('SIGINT', shutdown);
+process.on('SIGTERM', shutdown);

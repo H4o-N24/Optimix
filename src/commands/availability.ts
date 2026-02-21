@@ -15,11 +15,10 @@ import {
     ButtonStyle,
     EmbedBuilder,
 } from 'discord.js';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '../lib/prisma.js';
 import { getNextMonthInfo, formatDateJP } from '../utils/date.js';
 import { infoEmbed, errorEmbed } from '../utils/embeds.js';
 
-const prisma = new PrismaClient();
 
 /** メンバーごとに割り当てるカラー絵文字（最大15人まで対応） */
 const MEMBER_COLORS = [

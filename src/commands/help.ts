@@ -8,13 +8,16 @@ import {
     EmbedBuilder,
 } from 'discord.js';
 
+/** Blurple (ブランドカラー) */
+const BRAND_COLOR = 0x5865F2 as const;
+
 export const data = new SlashCommandBuilder()
     .setName('help')
     .setDescription('Knotの使い方を表示します');
 
 export async function execute(interaction: ChatInputCommandInteraction): Promise<void> {
     const embed = new EmbedBuilder()
-        .setColor(0x5865F2)
+        .setColor(BRAND_COLOR)
         .setTitle('📖 Knot - ヘルプ')
         .setDescription(
             'Knotは、メンバーの空きスケジュールから**最適な日程を自動提案**するDiscord Botです。',
