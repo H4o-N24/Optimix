@@ -1,5 +1,5 @@
 /**
- * Knot - 次世代Discord日程調整Bot
+ * Knot - Discord日程調整Bot
  * エントリーポイント
  */
 

@@ -61,7 +61,7 @@ export function candidateEmbed(
     const embed = new EmbedBuilder()
         .setColor(BRAND_COLORS.primary)
         .setTitle(title)
-        .setDescription('✨ 空き日データをもとに最適な日程をランキング形式で提案します。\nSelectMenuから希望日を選んで確定してください。')
+        .setDescription('空き日データをもとに最適な日程を提案します。希望日を選んで確定してください。')
         .setTimestamp();
 
     candidates.forEach((c, i) => {

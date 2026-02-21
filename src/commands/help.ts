@@ -63,7 +63,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
                 inline: false,
             },
         )
-        .setFooter({ text: 'Knot v1.1.0 | 次世代Discord日程調整Bot' });
+        .setFooter({ text: 'Knot v1.1.0 | Discord日程調整Bot' });
 
     await interaction.reply({ embeds: [embed], ephemeral: true });
 }
