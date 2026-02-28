@@ -7,6 +7,7 @@ import { Client, GatewayIntentBits } from 'discord.js';
 import { config, validateConfig } from './config.js';
 import { registerReadyHandler } from './events/ready.js';
 import { registerInteractionHandler } from './events/interactionCreate.js';
+import { registerGuildCreateHandler } from './events/guildCreate.js';
 import { startMonthlyScheduler, stopMonthlyScheduler } from './services/cleanup.js';
 
 // 環境変数のバリデーション
@@ -23,6 +24,7 @@ const client = new Client({
 // イベントハンドラの登録
 registerReadyHandler(client);
 registerInteractionHandler(client);
+registerGuildCreateHandler(client);
 
 // ログイン
 client.login(config.discordToken).then(() => {
