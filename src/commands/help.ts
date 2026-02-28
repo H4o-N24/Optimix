@@ -5,8 +5,7 @@
 import {
     SlashCommandBuilder,
     type ChatInputCommandInteraction,
-    EmbedBuilder,
-} from 'discord.js';
+    EmbedBuilder, MessageFlags } from 'discord.js';
 import { getT } from '../i18n/index.js';
 
 const BRAND_COLOR = 0x5865F2 as const;
@@ -33,5 +32,5 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
         )
         .setFooter({ text: h.footer });
 
-    await interaction.reply({ embeds: [embed], ephemeral: true });
+    await interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
 }

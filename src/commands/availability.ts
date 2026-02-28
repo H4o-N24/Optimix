@@ -13,8 +13,7 @@ import {
     StringSelectMenuBuilder,
     ButtonBuilder,
     ButtonStyle,
-    EmbedBuilder,
-} from 'discord.js';
+    EmbedBuilder, MessageFlags } from 'discord.js';
 import { prisma } from '../lib/prisma.js';
 import { getNextMonthInfo, formatDateJP } from '../utils/date.js';
 import { infoEmbed, errorEmbed } from '../utils/embeds.js';
@@ -120,7 +119,7 @@ async function handleRegister(interaction: ChatInputCommandInteraction): Promise
                 new ButtonBuilder().setCustomId('availability_clear').setLabel(t.availability.clearBtn).setStyle(ButtonStyle.Secondary),
             ),
         ],
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
     });
 }
 

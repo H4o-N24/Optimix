@@ -6,8 +6,7 @@
 
 import {
     type ButtonInteraction,
-    type StringSelectMenuInteraction,
-} from 'discord.js';
+    type StringSelectMenuInteraction, MessageFlags } from 'discord.js';
 import { prisma } from '../../lib/prisma.js';
 import { ensureGuildAndUser } from '../../lib/upsertHelpers.js';
 import { successEmbed, errorEmbed, infoEmbed } from '../../utils/embeds.js';
@@ -55,7 +54,7 @@ export async function handleAvailabilitySelect(
                 `${dateList}\n\n${t.availability.selectionHint}`,
             ),
         ],
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
     });
 }
 
@@ -65,7 +64,7 @@ export async function handleAvailabilitySelect(
 export async function handleAvailabilityConfirm(
     interaction: ButtonInteraction,
 ): Promise<void> {
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
     const guildId = interaction.guildId;
     const t = await getT(guildId);
@@ -117,6 +116,6 @@ export async function handleAvailabilityClear(
     const t = await getT(interaction.guildId);
     await interaction.reply({
         embeds: [infoEmbed('', t.availability.cleared)],
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
     });
 }

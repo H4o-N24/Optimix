@@ -5,7 +5,7 @@
  * 実際の処理は handlers/ 以下に委譲。
  */
 
-import { type Client, Events, type Interaction } from 'discord.js';
+import { type Client, Events, type Interaction , MessageFlags } from 'discord.js';
 import { commands } from '../commands/index.js';
 import { errorEmbed } from '../utils/embeds.js';
 import { getT } from '../i18n/index.js';
@@ -51,7 +51,7 @@ export function registerInteractionHandler(client: Client): void {
                         const t = await getT(interaction.guildId);
                         await interaction.reply({
                             embeds: [errorEmbed(t.setup.wrongChannelTitle, t.setup.wrongChannel(guild.botChannelId))],
-                            ephemeral: true,
+                            flags: MessageFlags.Ephemeral,
                         });
                         return;
                     }
@@ -118,7 +118,7 @@ export function registerInteractionHandler(client: Client): void {
         } catch (error) {
             console.error('❌ インタラクション処理エラー:', error);
             const t = await getT(interaction.isRepliable() && (interaction as any).guildId ? (interaction as any).guildId : null);
-            const reply = { embeds: [errorEmbed(t.common.errorTitle, t.common.processing)], ephemeral: true as const };
+            const reply = { embeds: [errorEmbed(t.common.errorTitle, t.common.processing)], flags: MessageFlags.Ephemeral as const };
             if (interaction.isRepliable()) {
                 if ((interaction as any).deferred || (interaction as any).replied) {
                     await (interaction as any).followUp(reply);

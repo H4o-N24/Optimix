@@ -14,8 +14,7 @@ import {
     ButtonStyle,
     ModalBuilder,
     TextInputBuilder,
-    TextInputStyle,
-} from 'discord.js';
+    TextInputStyle, MessageFlags } from 'discord.js';
 import { prisma } from '../../lib/prisma.js';
 import { successEmbed, errorEmbed, infoEmbed } from '../../utils/embeds.js';
 import { formatDateJP } from '../../utils/date.js';
@@ -38,7 +37,7 @@ export async function showEventManagePanel(
     });
 
     if (!event) {
-        await interaction.reply({ embeds: [errorEmbed(t.common.errorTitle, t.common.notFound)], ephemeral: true });
+        await interaction.reply({ embeds: [errorEmbed(t.common.errorTitle, t.common.notFound)], flags: MessageFlags.Ephemeral });
         return;
     }
 
@@ -73,7 +72,7 @@ export async function showEventManagePanel(
     await interaction.reply({
         embeds: [infoEmbed(`⚙️ ${event.title}`, description.join('\n'))],
         components: [row],
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
     });
 }
 
@@ -93,7 +92,7 @@ export async function showEventDetail(
     });
 
     if (!event) {
-        await interaction.reply({ embeds: [errorEmbed(t.common.errorTitle, t.common.notFound)], ephemeral: true });
+        await interaction.reply({ embeds: [errorEmbed(t.common.errorTitle, t.common.notFound)], flags: MessageFlags.Ephemeral });
         return;
     }
 
@@ -129,7 +128,7 @@ export async function showEditModal(
     const t = await getT(interaction.guildId);
     const event = await prisma.event.findUnique({ where: { id: eventId } });
     if (!event) {
-        await interaction.reply({ embeds: [errorEmbed(t.common.errorTitle, t.common.notFound)], ephemeral: true });
+        await interaction.reply({ embeds: [errorEmbed(t.common.errorTitle, t.common.notFound)], flags: MessageFlags.Ephemeral });
         return;
     }
 
@@ -154,7 +153,7 @@ export async function showEditModal(
 // 編集 Modal 送信
 // ─────────────────────────────────────────────
 export async function handleEditSubmit(interaction: ModalSubmitInteraction): Promise<void> {
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
     const t = await getT(interaction.guildId);
 
     const eventId = interaction.customId.split(':')[1];
@@ -208,7 +207,7 @@ export async function handleSingleDelete(
     interaction: ButtonInteraction,
     eventId: string,
 ): Promise<void> {
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
     const t = await getT(interaction.guildId);
     const event = await prisma.event.findUnique({ where: { id: eventId } });
     if (!event) {
@@ -234,7 +233,7 @@ export async function showBatchDeleteMenu(interaction: ButtonInteraction): Promi
     });
 
     if (events.length === 0) {
-        await interaction.reply({ embeds: [infoEmbed(t.event.noDeleteTargetTitle, t.event.noDeleteTarget)], ephemeral: true });
+        await interaction.reply({ embeds: [infoEmbed(t.event.noDeleteTargetTitle, t.event.noDeleteTarget)], flags: MessageFlags.Ephemeral });
         return;
     }
 
@@ -255,7 +254,7 @@ export async function showBatchDeleteMenu(interaction: ButtonInteraction): Promi
     await interaction.reply({
         embeds: [infoEmbed(t.event.batchDeleteMenuTitle, t.event.batchDeleteMenuDesc)],
         components: [new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(selectMenu)],
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
     });
 }
 
@@ -265,7 +264,7 @@ export async function showBatchDeleteMenu(interaction: ButtonInteraction): Promi
 export async function handleBatchDeleteConfirm(
     interaction: StringSelectMenuInteraction,
 ): Promise<void> {
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
     const t = await getT(interaction.guildId);
     const selectedIds = interaction.values;
     const events = await prisma.event.findMany({ where: { id: { in: selectedIds } } });

@@ -9,8 +9,7 @@
 import {
     SlashCommandBuilder,
     type ChatInputCommandInteraction,
-    PermissionFlagsBits,
-} from 'discord.js';
+    PermissionFlagsBits, MessageFlags } from 'discord.js';
 import { prisma } from '../lib/prisma.js';
 import { successEmbed, infoEmbed, errorEmbed } from '../utils/embeds.js';
 import { getT } from '../i18n/index.js';
@@ -18,7 +17,6 @@ import { getT } from '../i18n/index.js';
 export const data = new SlashCommandBuilder()
     .setName('premium')
     .setDescription('プレミアムプランの管理 / Manage premium plan')
-    .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
     .addSubcommand((sub) =>
         sub
             .setName('activate')
@@ -44,13 +42,19 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
 // /premium activate
 // ─────────────────────────────────────────────
 async function handleActivate(interaction: ChatInputCommandInteraction): Promise<void> {
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
     const guildId = interaction.guildId;
     const t = await getT(guildId);
 
     if (!guildId) {
         await interaction.editReply({ embeds: [errorEmbed(t.common.errorTitle, t.common.guildOnly)] });
+        return;
+    }
+
+    // 管理者のみ実行可能
+    if (!interaction.memberPermissions?.has(PermissionFlagsBits.ManageGuild)) {
+        await interaction.editReply({ embeds: [errorEmbed(t.common.errorTitle, '\u30b3\u30de\u30f3\u30c9\u306f\u7ba1\u7406\u8005\u306e\u307f\u5b9f\u884c\u3067\u304d\u307e\u3059\u3002 / This command requires Manage Server permission.')] });
         return;
     }
 
@@ -112,7 +116,7 @@ async function handleActivate(interaction: ChatInputCommandInteraction): Promise
 // /premium status
 // ─────────────────────────────────────────────
 async function handleStatus(interaction: ChatInputCommandInteraction): Promise<void> {
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
     const guildId = interaction.guildId;
     const t = await getT(guildId);

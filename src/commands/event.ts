@@ -14,8 +14,7 @@ import {
     ActionRowBuilder,
     StringSelectMenuBuilder,
     ButtonBuilder,
-    ButtonStyle,
-} from 'discord.js';
+    ButtonStyle, MessageFlags } from 'discord.js';
 import { findOptimalDates } from '../services/scheduler.js';
 import { candidateEmbed, infoEmbed, errorEmbed } from '../utils/embeds.js';
 import { formatDateJP } from '../utils/date.js';
@@ -173,7 +172,7 @@ async function handleList(interaction: ChatInputCommandInteraction): Promise<voi
     const t = await getT(guildId);
 
     if (!guildId) {
-        await interaction.reply({ embeds: [errorEmbed(t.common.errorTitle, t.common.guildOnly)], ephemeral: true });
+        await interaction.reply({ embeds: [errorEmbed(t.common.errorTitle, t.common.guildOnly)], flags: MessageFlags.Ephemeral });
         return;
     }
 
@@ -185,7 +184,7 @@ async function handleList(interaction: ChatInputCommandInteraction): Promise<voi
     });
 
     if (events.length === 0) {
-        await interaction.reply({ embeds: [infoEmbed(t.event.listTitle, t.event.listEmpty)], ephemeral: true });
+        await interaction.reply({ embeds: [infoEmbed(t.event.listTitle, t.event.listEmpty)], flags: MessageFlags.Ephemeral });
         return;
     }
 
@@ -204,7 +203,7 @@ async function handleList(interaction: ChatInputCommandInteraction): Promise<voi
     await interaction.reply({
         embeds: [infoEmbed(t.event.listTitle, descriptions.join('\n') + `\n\n${t.event.listHint}`)],
         components: [new ActionRowBuilder<ButtonBuilder>().addComponents(historyBtn)],
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
     });
 }
 
@@ -216,7 +215,7 @@ async function handleManage(interaction: ChatInputCommandInteraction): Promise<v
     const t = await getT(guildId);
 
     if (!guildId) {
-        await interaction.reply({ embeds: [errorEmbed(t.common.errorTitle, t.common.guildOnly)], ephemeral: true });
+        await interaction.reply({ embeds: [errorEmbed(t.common.errorTitle, t.common.guildOnly)], flags: MessageFlags.Ephemeral });
         return;
     }
 
@@ -227,7 +226,7 @@ async function handleManage(interaction: ChatInputCommandInteraction): Promise<v
     });
 
     if (events.length === 0) {
-        await interaction.reply({ embeds: [infoEmbed(t.event.manageTitle, t.event.manageEmpty)], ephemeral: true });
+        await interaction.reply({ embeds: [infoEmbed(t.event.manageTitle, t.event.manageEmpty)], flags: MessageFlags.Ephemeral });
         return;
     }
 
@@ -259,6 +258,6 @@ async function handleManage(interaction: ChatInputCommandInteraction): Promise<v
             new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(selectMenu),
             new ActionRowBuilder<ButtonBuilder>().addComponents(recommendBtn, batchDeleteBtn),
         ],
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
     });
 }

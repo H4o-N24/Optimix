@@ -12,8 +12,7 @@ import {
     type ChatInputCommandInteraction,
     ChannelType,
     PermissionFlagsBits,
-    type TextChannel,
-} from 'discord.js';
+    type TextChannel, MessageFlags } from 'discord.js';
 import { prisma } from '../lib/prisma.js';
 import { successEmbed, infoEmbed, errorEmbed } from '../utils/embeds.js';
 import { getT, getDict } from '../i18n/index.js';
@@ -69,7 +68,7 @@ export async function execute(interaction: ChatInputCommandInteraction): Promise
 // /setup channel
 // ─────────────────────────────────────────────
 async function handleSetupChannel(interaction: ChatInputCommandInteraction): Promise<void> {
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
     const guild = interaction.guild;
     const guildId = interaction.guildId;
@@ -123,7 +122,7 @@ async function handleSetupChannel(interaction: ChatInputCommandInteraction): Pro
 // /setup language
 // ─────────────────────────────────────────────
 async function handleSetupLanguage(interaction: ChatInputCommandInteraction): Promise<void> {
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
     const guildId = interaction.guildId;
     if (!guildId) {
@@ -151,7 +150,7 @@ async function handleSetupLanguage(interaction: ChatInputCommandInteraction): Pr
 // /setup reset
 // ─────────────────────────────────────────────
 async function handleReset(interaction: ChatInputCommandInteraction): Promise<void> {
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
 
     const guildId = interaction.guildId;
     const t = await getT(guildId);

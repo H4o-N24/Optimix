@@ -8,8 +8,7 @@ import {
     type ButtonInteraction,
     type StringSelectMenuInteraction,
     ActionRowBuilder,
-    StringSelectMenuBuilder,
-} from 'discord.js';
+    StringSelectMenuBuilder, MessageFlags } from 'discord.js';
 import { prisma } from '../../lib/prisma.js';
 import { successEmbed, errorEmbed, infoEmbed, confirmedEventEmbed } from '../../utils/embeds.js';
 import { formatDateJP } from '../../utils/date.js';
@@ -67,7 +66,7 @@ export async function handleEventJoin(
     interaction: ButtonInteraction,
     eventId: string,
 ): Promise<void> {
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
     const t = await getT(interaction.guildId);
     await ensureUser(interaction.user.id, interaction.user.tag);
     const result = await joinEvent(eventId, interaction.user.id);
@@ -84,7 +83,7 @@ export async function handleEventCancel(
     interaction: ButtonInteraction,
     eventId: string,
 ): Promise<void> {
-    await interaction.deferReply({ ephemeral: true });
+    await interaction.deferReply({ flags: MessageFlags.Ephemeral });
     const t = await getT(interaction.guildId);
     await ensureUser(interaction.user.id, interaction.user.tag);
     const result = await cancelEvent(eventId, interaction.user.id);
@@ -114,7 +113,7 @@ export async function showEventHistory(interaction: ButtonInteraction): Promise<
     });
 
     if (archivedEvents.length === 0) {
-        await interaction.reply({ embeds: [infoEmbed(t.event.historyTitle, t.event.historyEmpty)], ephemeral: true });
+        await interaction.reply({ embeds: [infoEmbed(t.event.historyTitle, t.event.historyEmpty)], flags: MessageFlags.Ephemeral });
         return;
     }
 
@@ -125,7 +124,7 @@ export async function showEventHistory(interaction: ButtonInteraction): Promise<
 
     await interaction.reply({
         embeds: [infoEmbed(t.event.historyTitle, descriptions.join('\n'))],
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
     });
 }
 
@@ -145,7 +144,7 @@ export async function handleEventRecommend(interaction: ButtonInteraction): Prom
     });
 
     if (events.length === 0) {
-        await interaction.reply({ embeds: [infoEmbed(t.event.recommendTitle, t.event.recommendEmpty)], ephemeral: true });
+        await interaction.reply({ embeds: [infoEmbed(t.event.recommendTitle, t.event.recommendEmpty)], flags: MessageFlags.Ephemeral });
         return;
     }
 
@@ -166,6 +165,6 @@ export async function handleEventRecommend(interaction: ButtonInteraction): Prom
     await interaction.reply({
         embeds: [infoEmbed(t.event.recommendTitle, t.event.recommendDesc)],
         components: [row],
-        ephemeral: true,
+        flags: MessageFlags.Ephemeral,
     });
 }
